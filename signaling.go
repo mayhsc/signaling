@@ -4,14 +4,18 @@ import "net/http"
 
 type signalingServer struct {
 	serveMux http.ServeMux
-	
+	rooms    map[string]Room
+}
+
+type Room struct {
+	host *WebRTCIceCandidate
+	peer *WebRTCIceCandidate
 }
 
 func newSignalingServer() *signalingServer {
 	s := &signalingServer{}
 
-	s.serveMux.HandleFunc("/", s.createRoom)
-	s.serveMux.HandleFunc("/join", s.joinRoom)
+	s.serveMux.HandleFunc("/", s.handleSignalMessage)
 
 	return s
 }

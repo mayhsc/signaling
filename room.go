@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -18,11 +19,11 @@ type WebRTCIceCandidate struct {
 type SignalMessage struct {
 	Type      string              `json:"type"`
 	Candidate *WebRTCIceCandidate `json:"candidate,omitempty"`
-	RoomCode    *string             `json:"roomCode,omitempty"`
+	RoomCode  *string             `json:"roomCode,omitempty"`
 	SDP       string              `json:"sdp,omitempty"`
 }
 
-func (s *signalingServer) createRoom(w http.ResponseWriter, r *http.Request) {
+func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		OriginPatterns: []string{"localhost:8080"},
 	})
@@ -48,22 +49,26 @@ func (s *signalingServer) createRoom(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Printf("MSG: %+v", msg)
-		if msg.Type == "create-room" {
-			roomCode := generateId(5)
-			err := wsjson.Write(ctx, conn, SignalMessage{
-				Type:   "room-code",
-				RoomCode: &roomCode,
-			})
-
-			if err != nil {
-				log.Println("write error: ", err)
-				break
-			}
-
-		} else if msg.Type == "ice-candidate" {
-			log.Printf("Received ICE candidate: %+v", msg.Candidate)
+		switch msg.Type {
+		case "create-room":
+			s.createRoom(ctx, conn)
 		}
 	}
+}
+
+func(s *signalingServer) createRoom(ctx context.Context, conn *websocket.Conn) {
+	roomCode := generateId(5)
+	err := wsjson.Write(ctx, conn, SignalMessage{
+		Type:     "room-code",
+		RoomCode: &roomCode,
+	})
+
+	if err != nil {
+		log.Println("write error: ", err)
+		return
+	}
+
+	s.rooms[roomCode] = Room{}
 }
 
 func (s *signalingServer) joinRoom(w http.ResponseWriter, r *http.Request) {
