@@ -4,12 +4,14 @@ import "net/http"
 
 type signalingServer struct {
 	serveMux http.ServeMux
-	rooms    map[string]Room
+	rooms    map[string]*Room
 }
 
 type Room struct {
 	host *WebRTCIceCandidate
 	peer *WebRTCIceCandidate
+	offer string
+	answer string
 }
 
 func newSignalingServer() *signalingServer {

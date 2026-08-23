@@ -24,6 +24,7 @@ type SignalMessage struct {
 }
 
 func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Request) {
+	s.rooms = make(map[string]*Room)
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		OriginPatterns: []string{"localhost:8080"},
 	})
@@ -52,11 +53,19 @@ func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Req
 		switch msg.Type {
 		case "create-room":
 			s.createRoom(ctx, conn)
+		case "host-candidate":
+			roomCode := msg.RoomCode
+			s.rooms[*roomCode].host = msg.Candidate
+			log.Printf("Room: %+v", s.rooms[*roomCode])
+		case "offer":
+			roomCode := msg.RoomCode
+			s.rooms[*roomCode].offer = msg.SDP
+			log.Printf("Room: %+v", s.rooms[*roomCode])
 		}
 	}
 }
 
-func(s *signalingServer) createRoom(ctx context.Context, conn *websocket.Conn) {
+func (s *signalingServer) createRoom(ctx context.Context, conn *websocket.Conn) {
 	roomCode := generateId(5)
 	err := wsjson.Write(ctx, conn, SignalMessage{
 		Type:     "room-code",
@@ -68,7 +77,7 @@ func(s *signalingServer) createRoom(ctx context.Context, conn *websocket.Conn) {
 		return
 	}
 
-	s.rooms[roomCode] = Room{}
+	s.rooms[roomCode] = &Room{}
 }
 
 func (s *signalingServer) joinRoom(w http.ResponseWriter, r *http.Request) {
