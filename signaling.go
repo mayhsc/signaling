@@ -9,7 +9,7 @@ type signalingServer struct {
 func newSignalingServer() *signalingServer {
 	s := &signalingServer{}
 
-	s.serveMux.HandleFunc("/create", s.createRoom)
+	s.serveMux.HandleFunc("/", s.createRoom)
 	s.serveMux.HandleFunc("/join", s.joinRoom)
 
 	return s

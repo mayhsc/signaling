@@ -8,13 +8,22 @@ import (
 	"github.com/coder/websocket/wsjson"
 )
 
+type WebRTCIceCandidate struct {
+	Candidate        string  `json:"candidate"`
+	SdpMid           *string `json:"sdpMid"`
+	SdpMLineIndex    *uint16 `json:"sdpMLineIndex"`
+	UsernameFragment *string `json:"usernameFragment"`
+}
+
 type SignalMessage struct {
-	Type      string      `json:"type"`
-	Candidate interface{} `json:"candidate,omitempty"`
+	Type      string             `json:"type"`
+	Candidate WebRTCIceCandidate `json:"candidate"`
 }
 
 func (s *signalingServer) createRoom(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Accept(w, r, nil)
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		OriginPatterns: []string{"localhost:8080"},
+	})
 
 	if err != nil {
 		log.Println(err)
