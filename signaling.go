@@ -4,6 +4,7 @@ import "net/http"
 
 type signalingServer struct {
 	serveMux http.ServeMux
+	
 }
 
 func newSignalingServer() *signalingServer {

@@ -16,8 +16,10 @@ type WebRTCIceCandidate struct {
 }
 
 type SignalMessage struct {
-	Type      string             `json:"type"`
-	Candidate WebRTCIceCandidate `json:"candidate"`
+	Type      string              `json:"type"`
+	Candidate *WebRTCIceCandidate `json:"candidate,omitempty"`
+	RoomCode    *string             `json:"roomCode,omitempty"`
+	SDP       string              `json:"sdp,omitempty"`
 }
 
 func (s *signalingServer) createRoom(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +47,20 @@ func (s *signalingServer) createRoom(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		if msg.Type == "ice-candidate" {
+		log.Printf("MSG: %+v", msg)
+		if msg.Type == "create-room" {
+			roomCode := generateId(5)
+			err := wsjson.Write(ctx, conn, SignalMessage{
+				Type:   "room-code",
+				RoomCode: &roomCode,
+			})
+
+			if err != nil {
+				log.Println("write error: ", err)
+				break
+			}
+
+		} else if msg.Type == "ice-candidate" {
 			log.Printf("Received ICE candidate: %+v", msg.Candidate)
 		}
 	}
