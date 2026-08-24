@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 
@@ -56,10 +57,15 @@ func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Req
 			s.createRoom(ctx, conn)
 		case "join-room":
 			s.joinRoom(ctx, conn, msg)
-		case "offer":
-			roomCode := msg.RoomCode
-			s.rooms[*roomCode].offer = msg.SDP
-			log.Printf("Room: %+v", s.rooms[*roomCode])
+		case "ice-candidate", "offer", "answer":
+			isHost := true
+			if msg.Message == "peer-candidate" {
+				isHost = false
+			}
+			s.relay(ctx, isHost, msg)
+			// roomCode := msg.RoomCode
+			// s.rooms[*roomCode].offer = msg.SDP
+			// log.Printf("Room: %+v", s.rooms[*roomCode])
 		}
 	}
 }
@@ -83,31 +89,20 @@ func (s *signalingServer) createRoom(ctx context.Context, conn *websocket.Conn) 
 
 func (s *signalingServer) joinRoom(ctx context.Context, conn *websocket.Conn, msg SignalMessage) {
 	roomCode := msg.RoomCode
-	log.Println(*roomCode)
 
-	if roomCode == nil {
+	room, err := s.checkRoom(roomCode)
+
+	if err != nil {
 		err := wsjson.Write(ctx, conn, SignalMessage{
 			Type:    "error",
-			Message: "Room code is required",
+			Message: err.Error(),
 		})
 		if err != nil {
 			log.Println("Error writing missing room code error: ", err)
 		}
-	}
-
-	room, ok := s.rooms[*roomCode]
-	log.Println(s.rooms)
-
-	if !ok {
-		err := wsjson.Write(ctx, conn, SignalMessage{
-			Type:    "error",
-			Message: "Room code not found",
-		})
-		if err != nil {
-			log.Println("Error during writing of sending room code error: ", err)
-		}
 		return
 	}
+
 	s.rooms[*roomCode].peerConn = conn
 
 	wsjson.Write(ctx, room.peerConn, SignalMessage{
@@ -117,4 +112,24 @@ func (s *signalingServer) joinRoom(ctx context.Context, conn *websocket.Conn, ms
 	wsjson.Write(ctx, room.hostConn, SignalMessage{
 		Type: "peer-joined",
 	})
+}
+
+func (s *signalingServer) relay(ctx context.Context, isHost bool, msg SignalMessage) {
+
+}
+
+func (s *signalingServer) checkRoom(roomCode *string) (*Room, error) {
+	log.Println(*roomCode)
+
+	if roomCode == nil {
+		return nil, errors.New("Room code is required")
+	}
+
+	room, ok := s.rooms[*roomCode]
+
+	if !ok {
+		return nil, errors.New("Room not found")
+	}
+
+	return room, nil
 }
