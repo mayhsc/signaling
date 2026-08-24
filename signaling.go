@@ -1,6 +1,11 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+	"sync"
+
+	"github.com/coder/websocket"
+)
 
 type signalingServer struct {
 	serveMux http.ServeMux
@@ -8,8 +13,9 @@ type signalingServer struct {
 }
 
 type Room struct {
-	host *WebRTCIceCandidate
-	peer *WebRTCIceCandidate
+	mu sync.Mutex
+	hostConn *websocket.Conn
+	peerConn *websocket.Conn
 	offer string
 	answer string
 }

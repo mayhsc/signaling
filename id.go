@@ -2,7 +2,7 @@ package main
 
 import "crypto/rand"
 
-const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generateId(length int) string {
 	bytes := make([]byte, length)
