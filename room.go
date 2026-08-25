@@ -58,14 +58,8 @@ func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Req
 		case "join-room":
 			s.joinRoom(ctx, conn, msg)
 		case "ice-candidate", "offer", "answer":
-			isHost := true
-			if msg.Message == "peer-candidate" {
-				isHost = false
-			}
-			s.relay(ctx, isHost, msg)
-			// roomCode := msg.RoomCode
-			// s.rooms[*roomCode].offer = msg.SDP
-			// log.Printf("Room: %+v", s.rooms[*roomCode])
+			s.relay(ctx, conn, msg)
+
 		}
 	}
 }
@@ -114,8 +108,45 @@ func (s *signalingServer) joinRoom(ctx context.Context, conn *websocket.Conn, ms
 	})
 }
 
-func (s *signalingServer) relay(ctx context.Context, isHost bool, msg SignalMessage) {
+func (s *signalingServer) relay(ctx context.Context, conn *websocket.Conn, msg SignalMessage) {
+	room, err := s.checkRoom(msg.RoomCode)
 
+	if err != nil {
+		err := wsjson.Write(ctx, conn, SignalMessage{
+			Type:    "error",
+			Message: err.Error(),
+		})
+		if err != nil {
+			log.Println("Error writing missing room code error: ", err)
+		}
+		return
+	}
+
+	var target *websocket.Conn
+
+	switch conn {
+	case room.hostConn:
+		target = room.peerConn
+	case room.peerConn:
+		target = room.hostConn
+	default:
+		err := wsjson.Write(ctx, conn, SignalMessage{
+			Type: "error",
+			Message: "Connection not recognized",
+		})
+		log.Println(err)
+		log.Println("relay: connection not recognized as host or peer for this room")
+		return
+	}
+
+	if target == nil {
+		log.Println("relay target not connected yet, dropping message:", msg.Type)
+		return
+	}
+
+	if err := wsjson.Write(ctx, target, msg); err != nil {
+		log.Println("relay write error:", err)
+	}
 }
 
 func (s *signalingServer) checkRoom(roomCode *string) (*Room, error) {
