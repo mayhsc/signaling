@@ -26,7 +26,6 @@ type SignalMessage struct {
 }
 
 func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Request) {
-	s.rooms = make(map[string]*Room)
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		OriginPatterns: []string{"localhost:8080", "localhost:8090"},
 	})

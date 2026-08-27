@@ -21,7 +21,9 @@ type Room struct {
 }
 
 func newSignalingServer() *signalingServer {
-	s := &signalingServer{}
+	s := &signalingServer{
+		rooms: make(map[string]*Room),
+	}
 
 	s.serveMux.HandleFunc("/", s.handleSignalMessage)
 
