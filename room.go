@@ -27,7 +27,7 @@ type SignalMessage struct {
 
 func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		OriginPatterns: []string{"localhost:8080", "localhost:8090"},
+		OriginPatterns: []string{"localhost:8080", "localhost:8090", "https://chetactoee.vercel.app/"},
 	})
 
 	if err != nil {
