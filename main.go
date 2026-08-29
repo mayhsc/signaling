@@ -19,7 +19,7 @@ func main() {
 	err := godotenv.Load()
 
 	if err != nil {
-		log.Fatal("Error loading env")
+		log.Fatal("Error loading env", err)
 	}
 
 	err = run()
