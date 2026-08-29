@@ -54,7 +54,7 @@ func (s *signalingServer) getTurnCredentails(w http.ResponseWriter, r *http.Requ
 
 	origin := r.Header.Get("Origin")
 
-	if origin == "http://localhost:8080" || origin == "http://localhost:8090" || origin == "chetactoee.vercel.app" {
+	if origin == "http://localhost:8080" || origin == "http://localhost:8090" || origin == "https://chetactoee.vercel.app" {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Vary", "Origin")
 	}
