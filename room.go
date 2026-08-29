@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -23,6 +27,42 @@ type SignalMessage struct {
 	RoomCode  *string             `json:"roomCode,omitempty"`
 	SDP       string              `json:"sdp,omitempty"`
 	Message   string              `json:"message,omitempty"`
+}
+
+type TurnCredentails struct {
+	Urls       []string `json:"url"`
+	Username   string   `json:"username"`
+	Credential string   `json:"credential"`
+}
+
+func (s *signalingServer) getTurnCredentails(w http.ResponseWriter, _ *http.Request) {
+
+	urlEnv := os.Getenv("URL")
+	username := os.Getenv("USERNAME")
+	credential := os.Getenv("CREDENTIAL")
+
+	if urlEnv == "" || username == "" || credential == "" {
+		fmt.Println("Env not set")
+		http.Error(w, "env is missing required variables", http.StatusInternalServerError)
+		return
+	}
+
+	hosts := strings.Split(urlEnv, ",")
+
+	for i := range hosts {
+		hosts[i] = strings.TrimSpace(hosts[i])
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "chetactoee.vercel.app")
+	w.Header().Set("Content-Type", "application/json")
+
+	creds := TurnCredentails{
+		Urls:       hosts,
+		Username:   username,
+		Credential: credential,
+	}
+
+	json.NewEncoder(w).Encode(creds)
 }
 
 func (s *signalingServer) handleSignalMessage(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +170,7 @@ func (s *signalingServer) relay(ctx context.Context, conn *websocket.Conn, msg S
 		target = room.hostConn
 	default:
 		err := wsjson.Write(ctx, conn, SignalMessage{
-			Type: "error",
+			Type:    "error",
 			Message: "Connection not recognized",
 		})
 		log.Println(err)

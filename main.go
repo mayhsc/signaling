@@ -9,12 +9,20 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	log.SetFlags(0)
 
-	err := run()
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading env")
+	}
+
+	err = run()
 	if err != nil {
 		log.Fatal(err)
 	}
