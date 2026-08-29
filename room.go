@@ -30,13 +30,12 @@ type SignalMessage struct {
 }
 
 type TurnCredentails struct {
-	Urls       []string `json:"url"`
+	Urls       []string `json:"urls"`
 	Username   string   `json:"username"`
 	Credential string   `json:"credential"`
 }
 
-func (s *signalingServer) getTurnCredentails(w http.ResponseWriter, _ *http.Request) {
-
+func (s *signalingServer) getTurnCredentails(w http.ResponseWriter, r *http.Request) {
 	urlEnv := os.Getenv("URL")
 	username := os.Getenv("USERNAME")
 	credential := os.Getenv("CREDENTIAL")
@@ -53,7 +52,13 @@ func (s *signalingServer) getTurnCredentails(w http.ResponseWriter, _ *http.Requ
 		hosts[i] = strings.TrimSpace(hosts[i])
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "chetactoee.vercel.app")
+	origin := r.Header.Get("Origin")
+
+	if origin == "http://localhost:8080" || origin == "http://localhost:8090" || origin == "chetactoee.vercel.app" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Vary", "Origin")
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	creds := TurnCredentails{

@@ -13,11 +13,11 @@ type signalingServer struct {
 }
 
 type Room struct {
-	mu sync.Mutex
+	mu       sync.Mutex
 	hostConn *websocket.Conn
 	peerConn *websocket.Conn
-	offer string
-	answer string
+	offer    string
+	answer   string
 }
 
 func newSignalingServer() *signalingServer {
@@ -26,6 +26,7 @@ func newSignalingServer() *signalingServer {
 	}
 
 	s.serveMux.HandleFunc("/", s.handleSignalMessage)
+	s.serveMux.HandleFunc("/turn-credentials", s.getTurnCredentails)
 
 	return s
 }
